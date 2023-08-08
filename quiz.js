@@ -32,6 +32,7 @@ const nameInput = document.getElementById("name");
 const playButton = document.getElementById("play-button");
 const questionsScreen = document.querySelector(".questions-screen");
 const questionElement = document.getElementById("question");
+const choicesDiv = document.getElementById("choices");
 const nextButton = document.getElementById("next-button");
 const lastScreen = document.querySelector(".last-screen");
 const resultName = document.getElementById("result-name");
@@ -43,6 +44,9 @@ startForm.addEventListener("submit", handleStartFormSubmit);
 nameInput.addEventListener("input", handleNameInput);
 nextButton.addEventListener("click", handleNextButton);
 goHomeButton.addEventListener("click", goHome);
+
+// Declare an array to track which questions' points have been added
+const questionsAnswered = new Array(quizData.length).fill(false);
 
 // Function to handle name input
 function handleNameInput() {
@@ -78,12 +82,7 @@ function showQuestion() {
     if (currentQuestionIndex < quizData.length) {
         const { question, choices } = quizData[currentQuestionIndex];
         questionElement.textContent = question;
-
-        // Get the "choices" div to append the buttons
-        const choicesDiv = document.getElementById("choices");
-        choicesDiv.innerHTML = ""; // Clear any previous choices
-
-        // Generate buttons for each choice
+        choicesDiv.innerHTML = ""; // Clear previous choices
         choices.forEach((choice, index) => {
             const choiceButton = document.createElement("button");
             choiceButton.textContent = choice;
@@ -91,40 +90,34 @@ function showQuestion() {
             choiceButton.onclick = () => handleChoiceClick(index); // Assign click event handler
             choicesDiv.appendChild(choiceButton);
         });
-
         nextButton.disabled = true; // Disable the "Next" button until an answer is selected
     } else {
         showResults();
     }
 }
 
-// Function to handle choice selection
 function handleChoiceClick(choiceIndex) {
     const correctAnswer = quizData[currentQuestionIndex].correctAnswer;
-    points += (choiceIndex === correctAnswer) ? quizData[currentQuestionIndex].points : 0;
-
-    // Add the "selected" class to the clicked button to change its color
     const selectedButton = document.querySelector(`[data-index="${choiceIndex}"]`);
-    if (selectedButton) {
-        // Check if the button is already selected, if not, then apply the "selected" class
-        if (!selectedButton.classList.contains("selected")) {
-            // Remove the "selected" class from any previously selected button
-            const previousSelectedButton = document.querySelector(".selected");
-            if (previousSelectedButton) {
-                previousSelectedButton.classList.remove("selected");
-            }
 
+    // Remove "correct" and "incorrect" classes from all choice buttons
+    choicesDiv.querySelectorAll("button").forEach(button => {
+        button.classList.remove("correct", "incorrect");
+    });
+
+    if (!questionsAnswered[currentQuestionIndex]) {
+        if (choiceIndex === correctAnswer) {
+            points += quizData[currentQuestionIndex].points;
+            selectedButton.classList.add("selected");
+        } else {
             selectedButton.classList.add("selected");
         }
+        questionsAnswered[currentQuestionIndex] = true;
+        nextButton.disabled = false; // Enable the "Next" button after an answer is selected
     }
-
-    // Re-enable the "Next" button after an answer is selected
-    nextButton.disabled = false;
 }
 
-// Function to handle the "Next" button click
 function handleNextButton() {
-    nextButton.disabled = true; // Disable the "Next" button until an answer is selected
     currentQuestionIndex++;
     showQuestion();
 }
@@ -146,6 +139,7 @@ function goHome() {
     playButton.disabled = true;
     currentQuestionIndex = 0;
     points = 0;
+    questionsAnswered.fill(false); // Reset the array tracking answered questions
 }
 
 // Function to show an element
